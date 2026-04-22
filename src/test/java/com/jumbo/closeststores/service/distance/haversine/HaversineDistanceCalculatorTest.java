@@ -58,7 +58,7 @@ class HaversineDistanceCalculatorTest {
 
         assertAll(
                 () -> assertEquals(3, result.distances().size()),
-                () -> assertEquals(DistanceStrategy.HAVERSINE.getValue(), result.strategyUsed())
+                () -> assertEquals(DistanceStrategy.HAVERSINE, result.strategyUsed())
         );
     }
 
@@ -69,12 +69,12 @@ class HaversineDistanceCalculatorTest {
 
         assertAll(
                 () -> assertTrue(result.distances().isEmpty()),
-                () -> assertEquals(DistanceStrategy.HAVERSINE.getValue(), result.strategyUsed())
+                () -> assertEquals(DistanceStrategy.HAVERSINE, result.strategyUsed())
         );
     }
 
     @Test
-    void shouldReturnHaversine_asStrategyName() {
-        assertEquals(DistanceStrategy.HAVERSINE.getValue(), calculator.getStrategyName());
+    void shouldReturnHaversine_asStrategy() {
+        assertEquals(DistanceStrategy.HAVERSINE, calculator.getStrategy());
     }
 }

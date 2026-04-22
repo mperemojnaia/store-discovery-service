@@ -52,7 +52,7 @@ class GoogleDistanceCalculatorTest {
 
         assertAll(
                 () -> assertEquals(List.of(5.5), result.distances()),
-                () -> assertEquals(DistanceStrategy.GOOGLE.getValue(), result.strategyUsed())
+                () -> assertEquals(DistanceStrategy.GOOGLE, result.strategyUsed())
         );
         verifyNoInteractions(fallback);
     }
@@ -65,13 +65,13 @@ class GoogleDistanceCalculatorTest {
         when(apiClient.fetchDistances(any(), anyList(), anyString()))
                 .thenThrow(new RestClientException("timeout"));
         when(fallback.calculateDistances(eq(origin), eq(destinations), eq(TravelMode.DRIVING)))
-                .thenReturn(new DistanceResult(List.of(7.0), DistanceStrategy.HAVERSINE.getValue()));
+                .thenReturn(new DistanceResult(List.of(7.0), DistanceStrategy.HAVERSINE));
 
         DistanceResult result = calculator.calculateDistances(origin, destinations, TravelMode.DRIVING);
 
         assertAll(
                 () -> assertEquals(List.of(7.0), result.distances()),
-                () -> assertEquals(DistanceStrategy.HAVERSINE.getValue(), result.strategyUsed())
+                () -> assertEquals(DistanceStrategy.HAVERSINE, result.strategyUsed())
         );
         verify(fallback).calculateDistances(eq(origin), eq(destinations), eq(TravelMode.DRIVING));
     }
@@ -87,12 +87,12 @@ class GoogleDistanceCalculatorTest {
 
         DistanceResult result = calculator.calculateDistances(origin, destinations, travelMode);
 
-        assertEquals(DistanceStrategy.GOOGLE.getValue(), result.strategyUsed());
+        assertEquals(DistanceStrategy.GOOGLE, result.strategyUsed());
     }
 
     @Test
-    void shouldReturnGoogleStrategyName() {
-        assertEquals(DistanceStrategy.GOOGLE.getValue(), calculator.getStrategyName());
+    void shouldReturnGoogleStrategy() {
+        assertEquals(DistanceStrategy.GOOGLE, calculator.getStrategy());
     }
 
     @Test
@@ -136,7 +136,7 @@ class GoogleDistanceCalculatorTest {
         when(apiClient.fetchDistances(eq(origin), eq(List.of(dest2)), eq("driving")))
                 .thenThrow(new RestClientException("fail"));
         when(fallback.calculateDistances(eq(origin), eq(List.of(dest2)), eq(TravelMode.DRIVING)))
-                .thenReturn(new DistanceResult(List.of(8.0), DistanceStrategy.HAVERSINE.getValue()));
+                .thenReturn(new DistanceResult(List.of(8.0), DistanceStrategy.HAVERSINE));
 
         DistanceResult result = calc.calculateDistances(origin, destinations, TravelMode.DRIVING);
 
@@ -144,7 +144,7 @@ class GoogleDistanceCalculatorTest {
                 () -> assertEquals(2, result.distances().size()),
                 () -> assertEquals(5.0, result.distances().getFirst()),
                 () -> assertEquals(8.0, result.distances().get(1)),
-                () -> assertEquals(DistanceStrategy.HAVERSINE.getValue(), result.strategyUsed())
+                () -> assertEquals(DistanceStrategy.HAVERSINE, result.strategyUsed())
         );
     }
 

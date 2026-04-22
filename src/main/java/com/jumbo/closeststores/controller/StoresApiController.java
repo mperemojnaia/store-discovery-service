@@ -40,7 +40,7 @@ public class StoresApiController implements StoresApi {
         StoreResponse response = storeResponseMapper.toStoreResponse(result);
 
         log.debug("Returning {} stores using {} strategy in {} ms",
-                response.getStores().size(), result.distanceType(),
+                response.getStores().size(), result.distanceStrategy(),
                 System.currentTimeMillis() - start);
 
         return ResponseEntity.ok(response);

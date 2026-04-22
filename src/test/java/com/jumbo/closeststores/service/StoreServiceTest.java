@@ -2,9 +2,9 @@ package com.jumbo.closeststores.service;
 
 import com.jumbo.closeststores.model.*;
 import com.jumbo.closeststores.repository.StoreRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -24,8 +24,12 @@ class StoreServiceTest {
     @Mock
     private DistanceCalculator distanceCalculator;
 
-    @InjectMocks
     private StoreService storeService;
+
+    @BeforeEach
+    void setUp() {
+        storeService = new StoreService(storeRepository, distanceCalculator, 5);
+    }
 
     private static Store storeAt(String name, double lat, double lng) {
         return Store.builder().addressName(name).latitude(lat).longitude(lng).build();
@@ -42,7 +46,7 @@ class StoreServiceTest {
 
         when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(stores);
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
-                .thenReturn(new DistanceResult(distances, "haversine"));
+                .thenReturn(new DistanceResult(distances, DistanceStrategy.HAVERSINE));
 
         StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
 
@@ -58,7 +62,7 @@ class StoreServiceTest {
 
         when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(stores);
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
-                .thenReturn(new DistanceResult(List.of(5.0, 3.0), "haversine"));
+                .thenReturn(new DistanceResult(List.of(5.0, 3.0), DistanceStrategy.HAVERSINE));
 
         StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
 
@@ -75,7 +79,7 @@ class StoreServiceTest {
 
         when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(stores);
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
-                .thenReturn(new DistanceResult(List.of(100.0, 1.0, 50.0), "haversine"));
+                .thenReturn(new DistanceResult(List.of(100.0, 1.0, 50.0), DistanceStrategy.HAVERSINE));
 
         StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
 
@@ -92,7 +96,7 @@ class StoreServiceTest {
 
         when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(stores);
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
-                .thenReturn(new DistanceResult(List.of(12.3456789), "haversine"));
+                .thenReturn(new DistanceResult(List.of(12.3456789), DistanceStrategy.HAVERSINE));
 
         StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
 
@@ -100,16 +104,29 @@ class StoreServiceTest {
     }
 
     @Test
-    void shouldIncludeDistanceType_fromCalculator() {
+    void shouldIncludeDistanceStrategy_fromCalculator() {
         List<Store> stores = List.of(storeAt("A", 52.1, 4.1));
 
         when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(stores);
         when(distanceCalculator.calculateDistances(any(), anyList(), eq(TravelMode.WALKING)))
-                .thenReturn(new DistanceResult(List.of(5.0), "google"));
+                .thenReturn(new DistanceResult(List.of(5.0), DistanceStrategy.GOOGLE));
 
         StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, TravelMode.WALKING);
 
-        assertEquals("google", result.distanceType());
+        assertEquals(DistanceStrategy.GOOGLE, result.distanceStrategy());
+    }
+
+    @Test
+    void shouldReturnEmptyResult_whenNoStoresAvailable() {
+        when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(List.of());
+        when(distanceCalculator.getStrategy()).thenReturn(DistanceStrategy.HAVERSINE);
+
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
+
+        assertAll(
+                () -> assertTrue(result.stores().isEmpty()),
+                () -> assertEquals(DistanceStrategy.HAVERSINE, result.distanceStrategy())
+        );
     }
 
     @Test

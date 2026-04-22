@@ -1,6 +1,5 @@
 package com.jumbo.closeststores.service.distance.ors;
 
-import com.jumbo.closeststores.config.OrsProperties;
 import com.jumbo.closeststores.model.DistanceResult;
 import com.jumbo.closeststores.model.DistanceStrategy;
 import com.jumbo.closeststores.model.Position;
@@ -39,7 +38,7 @@ class OrsDistanceCalculatorTest {
     @BeforeEach
     void setUp() {
         fallback = new HaversineDistanceCalculator();
-        calculator = new OrsDistanceCalculator(apiClient, fallback);
+        calculator = new OrsDistanceCalculator(apiClient, fallback, 15);
     }
 
     @Nested
@@ -55,7 +54,7 @@ class OrsDistanceCalculatorTest {
             DistanceResult result = calculator.calculateDistances(ORIGIN, destinations, TravelMode.DRIVING);
 
             assertAll(
-                    () -> assertEquals(DistanceStrategy.ORS.getValue(), result.strategyUsed()),
+                    () -> assertEquals(DistanceStrategy.ORS, result.strategyUsed()),
                     () -> assertEquals(20, result.distances().size()),
                     () -> assertTrue(result.distances().stream().anyMatch(d -> d == 2.5),
                             "Should contain ORS-refined distances")
@@ -75,7 +74,7 @@ class OrsDistanceCalculatorTest {
 
             DistanceResult result = calculator.calculateDistances(ORIGIN, destinations, TravelMode.DRIVING);
 
-            assertEquals(DistanceStrategy.ORS.getValue(), result.strategyUsed());
+            assertEquals(DistanceStrategy.ORS, result.strategyUsed());
         }
     }
 
@@ -145,7 +144,7 @@ class OrsDistanceCalculatorTest {
             DistanceResult result = calculator.calculateDistances(ORIGIN, destinations, TravelMode.DRIVING);
 
             assertAll(
-                    () -> assertEquals(DistanceStrategy.HAVERSINE.getValue(), result.strategyUsed()),
+                    () -> assertEquals(DistanceStrategy.HAVERSINE, result.strategyUsed()),
                     () -> assertEquals(3, result.distances().size()),
                     () -> assertTrue(result.distances().stream().allMatch(d -> d > 0),
                             "Should have Haversine distances as fallback")
@@ -165,7 +164,7 @@ class OrsDistanceCalculatorTest {
             DistanceResult result = calculator.calculateDistances(ORIGIN, destinations, TravelMode.WALKING);
 
             assertAll(
-                    () -> assertEquals(DistanceStrategy.ORS.getValue(), result.strategyUsed()),
+                    () -> assertEquals(DistanceStrategy.ORS, result.strategyUsed()),
                     () -> verify(apiClient).fetchDistance(eq(ORIGIN), any(Position.class), eq("foot-walking")),
                     () -> verify(apiClient).fetchDistance(eq(ORIGIN), any(Position.class), eq("driving-car"))
             );
@@ -181,7 +180,7 @@ class OrsDistanceCalculatorTest {
 
             DistanceResult result = calculator.calculateDistances(ORIGIN, destinations, TravelMode.DRIVING);
 
-            assertEquals(DistanceStrategy.HAVERSINE.getValue(), result.strategyUsed());
+            assertEquals(DistanceStrategy.HAVERSINE, result.strategyUsed());
             // Should only call once — no retry since already using default profile
             verify(apiClient, times(1)).fetchDistance(eq(ORIGIN), any(Position.class), eq("driving-car"));
         }
@@ -234,7 +233,7 @@ class OrsDistanceCalculatorTest {
 
     @Test
     void shouldReturnOrsStrategyName() {
-        assertEquals(DistanceStrategy.ORS.getValue(), calculator.getStrategyName());
+        assertEquals(DistanceStrategy.ORS, calculator.getStrategy());
     }
 
     private static List<Position> createDestinations(int count) {
