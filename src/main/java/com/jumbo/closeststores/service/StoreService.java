@@ -12,9 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Service
 public class StoreService {
@@ -24,17 +23,18 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final DistanceCalculator distanceCalculator;
-    private final int maxResults;
+    private final int defaultMaxResults;
 
     public StoreService(StoreRepository storeRepository,
                         DistanceCalculator distanceCalculator,
-                        @Value("${store.max-results:5}") int maxResults) {
+                        @Value("${store.max-results:5}") int defaultMaxResults) {
         this.storeRepository = storeRepository;
         this.distanceCalculator = distanceCalculator;
-        this.maxResults = maxResults;
+        this.defaultMaxResults = defaultMaxResults;
     }
 
-    public StoreLocatorResult findClosestStores(double lat, double lng, TravelMode travelMode) {
+    public StoreLocatorResult findClosestStores(double lat, double lng, TravelMode travelMode, Integer limit) {
+        int maxResults = (limit != null) ? limit : defaultMaxResults;
         Position origin = new Position(lat, lng);
 
         List<Store> nearbyStores = storeRepository.findNearbyStores(lat, lng);
@@ -52,20 +52,18 @@ public class StoreService {
         DistanceResult distanceResult = distanceCalculator.calculateDistances(origin, storePositions, travelMode);
         List<Double> distances = distanceResult.distances();
 
-        List<StoreWithDistance> storesWithDistance = new ArrayList<>(nearbyStores.size());
-        for (int i = 0; i < nearbyStores.size(); i++) {
-            double roundedDistance = Math.round(distances.get(i) * DISTANCE_ROUNDING_FACTOR) / DISTANCE_ROUNDING_FACTOR;
-            storesWithDistance.add(new StoreWithDistance(nearbyStores.get(i), roundedDistance));
+        List<StoreWithDistance> closest = IntStream.range(0, nearbyStores.size())
+                .mapToObj(i -> new StoreWithDistance(
+                        nearbyStores.get(i),
+                        Math.round(distances.get(i) * DISTANCE_ROUNDING_FACTOR) / DISTANCE_ROUNDING_FACTOR))
+                .sorted()
+                .limit(maxResults)
+                .toList();
+
+        if (!closest.isEmpty()) {
+            log.debug("Closest store: '{}' at {} km", closest.get(0).store().addressName(),
+                    closest.get(0).distanceKm());
         }
-
-        Collections.sort(storesWithDistance);
-
-        List<StoreWithDistance> closest = storesWithDistance.size() <= maxResults
-                ? storesWithDistance
-                : storesWithDistance.subList(0, maxResults);
-
-        log.debug("Closest store: '{}' at {} km", closest.get(0).store().addressName(),
-                closest.get(0).distanceKm());
 
         return new StoreLocatorResult(closest, distanceResult.strategyUsed());
     }

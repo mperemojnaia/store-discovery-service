@@ -49,6 +49,16 @@ paths:
               - walking
               - bicycling
               - transit
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of stores to return (1-50)
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 50
+            default: 5
       responses:
         '200':
           description: Successfully found closest stores

@@ -1,11 +1,13 @@
 package com.jumbo.closeststores.model;
 
 import com.jumbo.closeststores.controller.exception.InvalidRequestException;
+import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Getter
 public enum TravelMode {
     DRIVING("driving"),
     WALKING("walking"),
@@ -23,10 +25,6 @@ public enum TravelMode {
 
     TravelMode(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     public static TravelMode fromValue(String value) {

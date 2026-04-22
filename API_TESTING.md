@@ -5,6 +5,19 @@ Start the service first:
 # Default (Haversine)
 ./mvnw spring-boot:run
 
+## or with With Docker and env file for ORS
+
+```bash
+# Build the image
+docker build -t closest-stores .
+
+# Run with defaults (Haversine distance, port 8080)
+docker run -p 8080:8080 closest-stores
+
+# Run with ORS or Google — use an env file for API keys (never pass secrets inline)
+docker run -p 8080:8080 --env-file .env closest-stores
+```
+
 # With OpenRouteService (free key from https://openrouteservice.org/dev/#/signup)
 DISTANCE_STRATEGY=ors ORS_API_KEY=your-key ./mvnw spring-boot:run
 

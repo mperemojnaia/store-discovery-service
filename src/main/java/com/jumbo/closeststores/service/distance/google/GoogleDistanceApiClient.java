@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -27,12 +27,12 @@ public class GoogleDistanceApiClient {
     private static final Logger log = LoggerFactory.getLogger(GoogleDistanceApiClient.class);
     private static final double METERS_PER_KM = 1000.0;
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final GoogleMapsProperties properties;
 
     public GoogleDistanceApiClient(GoogleMapsProperties properties) {
         this.properties = properties;
-        this.restTemplate = buildRestTemplate(properties.timeout());
+        this.restClient = buildRestClient(properties.timeout());
     }
 
     @Retry(name = "googleDistanceApi")
@@ -54,7 +54,10 @@ public class GoogleDistanceApiClient {
                 .build()
                 .toUri();
 
-        DistanceMatrixResponse response = restTemplate.getForObject(uri, DistanceMatrixResponse.class);
+        DistanceMatrixResponse response = restClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(DistanceMatrixResponse.class);
 
         if (response == null) {
             throw new RestClientException("Null response from Google Distance Matrix API");
@@ -102,10 +105,12 @@ public class GoogleDistanceApiClient {
         throw new RestClientException("Unexpected API status: " + status);
     }
 
-    private static RestTemplate buildRestTemplate(int timeoutMs) {
+    private static RestClient buildRestClient(int timeoutMs) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(timeoutMs);
         factory.setReadTimeout(timeoutMs);
-        return new RestTemplate(factory);
+        return RestClient.builder()
+                .requestFactory(factory)
+                .build();
     }
 }

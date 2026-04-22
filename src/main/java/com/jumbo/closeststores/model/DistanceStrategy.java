@@ -1,5 +1,8 @@
 package com.jumbo.closeststores.model;
 
+import lombok.Getter;
+
+@Getter
 public enum DistanceStrategy {
     HAVERSINE("haversine"),
     GOOGLE("google"),
@@ -11,7 +14,4 @@ public enum DistanceStrategy {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

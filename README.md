@@ -1,6 +1,6 @@
 # Closest Stores Service
 
-A Spring Boot microservice that finds the 5 closest Jumbo stores to a given geographic position. Supports distance calculation via the Haversine formula (default), OpenRouteService Matrix API, or the Google Distance Matrix API.
+A Spring Boot microservice that finds the 5(default) closest Jumbo stores to a given geographic position. Supports distance calculation via the Haversine formula (default), OpenRouteService Matrix API, or the Google Distance Matrix API.
 
 ## Prerequisites
 
@@ -35,7 +35,8 @@ docker run -p 8080:8080 closest-stores
 docker run -p 8080:8080 --env-file .env closest-stores
 ```
 
-Create a `.env` file in the project root (already in `.gitignore`):
+Create a `.env` file in the project root (normally we would keep the api-key in the secrets and not commit it) with the following content:
+Currently 'ors' is set in .env as default.
 ```env
 DISTANCE_STRATEGY=ors
 ORS_API_KEY=your-ors-key-here
@@ -66,6 +67,12 @@ GET /api/v1/stores/closest?latitude=52.3676&longitude=4.9041&travelMode=driving
 
 Valid travel modes: `driving`, `walking`, `bicycling`, `transit`
 
+With custom result limit (default: 5, max: 50):
+
+```
+GET /api/v1/stores/closest?latitude=52.3676&longitude=4.9041&limit=10
+```
+
 ### Example response
 
 ```json
@@ -93,6 +100,16 @@ Valid travel modes: `driving`, `walking`, `bicycling`, `transit`
 }
 ```
 
+## Distance Strategies
+
+| Strategy | How it works | Pros | Cons |
+|---|---|---|---|
+| `haversine` | Straight-line (as-the-crow-flies) distance using the Haversine formula | Fast, no API key needed, zero cost | Doesn't account for roads, rivers, or terrain |
+| `ors` | Real travel distance via [OpenRouteService](https://openrouteservice.org) Directions API | Accurate road distances, free API key, supports walking/cycling | Rate-limited, slower (sequential HTTP calls per candidate) |
+| `google` | Real travel distance via Google Distance Matrix API | Most accurate, supports transit | Requires paid Google Cloud account, not currently active |
+
+All strategies fall back to Haversine automatically if the external API fails (circuit breaker + retry via Resilience4j).
+
 ## Configuration
 
 | Variable | Description | Default |
@@ -101,3 +118,17 @@ Valid travel modes: `driving`, `walking`, `bicycling`, `transit`
 | `ORS_API_KEY` | OpenRouteService API key (required when strategy is `ors`). Free at [openrouteservice.org](https://openrouteservice.org) | — |
 | `GOOGLE_MAPS_API_KEY` | Google Maps API key (required when strategy is `google`) | — |
 | `SERVER_PORT` | HTTP server port | `8080` |
+| `STORE_MAX_RESULTS` | Default number of stores returned | `5` |
+| `STORE_GEOHASH_PRECISION` | Geohash cell precision for spatial pre-filtering (higher = smaller cells) | `4` |
+
+> **Note on Google Distance Matrix API:** The `google` distance strategy is implemented but not currently active. We don't have a Google Cloud account with the Distance Matrix API enabled yet. When a Google Cloud project is set up in the future, add the API key to the `.env` file and set `DISTANCE_STRATEGY=google`. Until then, use `haversine` (default) or `ors`.
+
+## Testing
+
+Run the test suite:
+
+```bash
+./mvnw clean verify
+```
+
+For manual API testing with curl examples (Haversine, ORS, Google, error cases), see [API_TESTING.md](API_TESTING.md).

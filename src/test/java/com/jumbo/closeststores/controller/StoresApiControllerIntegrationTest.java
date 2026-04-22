@@ -73,7 +73,7 @@ class StoresApiControllerIntegrationTest {
 
         @Test
         void shouldReturn200WithStores_whenValidCoordinatesProvided() throws Exception {
-            when(storeService.findClosestStores(eq(52.37), eq(4.90), eq(TravelMode.DRIVING)))
+            when(storeService.findClosestStores(eq(52.37), eq(4.90), eq(TravelMode.DRIVING), any()))
                     .thenReturn(singleStoreResult());
 
             mockMvc.perform(get(ENDPOINT)
@@ -89,7 +89,7 @@ class StoresApiControllerIntegrationTest {
 
         @Test
         void shouldReturnAllRequiredFields_inStoreResponse() throws Exception {
-            when(storeService.findClosestStores(anyDouble(), anyDouble(), any(TravelMode.class)))
+            when(storeService.findClosestStores(anyDouble(), anyDouble(), any(TravelMode.class), any()))
                     .thenReturn(singleStoreResult());
 
             mockMvc.perform(get(ENDPOINT)
@@ -111,7 +111,7 @@ class StoresApiControllerIntegrationTest {
         @ParameterizedTest
         @ValueSource(strings = {"driving", "walking", "bicycling", "transit"})
         void shouldAcceptValidTravelModes(String mode) throws Exception {
-            when(storeService.findClosestStores(anyDouble(), anyDouble(), any(TravelMode.class)))
+            when(storeService.findClosestStores(anyDouble(), anyDouble(), any(TravelMode.class), any()))
                     .thenReturn(singleStoreResult());
 
             mockMvc.perform(get(ENDPOINT)
@@ -123,7 +123,7 @@ class StoresApiControllerIntegrationTest {
 
         @Test
         void shouldPassTravelModeToService() throws Exception {
-            when(storeService.findClosestStores(anyDouble(), anyDouble(), eq(TravelMode.WALKING)))
+            when(storeService.findClosestStores(anyDouble(), anyDouble(), eq(TravelMode.WALKING), any()))
                     .thenReturn(singleStoreResult());
 
             mockMvc.perform(get(ENDPOINT)
@@ -132,7 +132,7 @@ class StoresApiControllerIntegrationTest {
                             .param("travelMode", "walking"))
                     .andExpect(status().isOk());
 
-            verify(storeService).findClosestStores(52.37, 4.90, TravelMode.WALKING);
+            verify(storeService).findClosestStores(eq(52.37), eq(4.90), eq(TravelMode.WALKING), any());
         }
     }
 
@@ -168,7 +168,7 @@ class StoresApiControllerIntegrationTest {
         @ParameterizedTest
         @CsvSource({"-90, -180", "90, 180", "0, 0"})
         void shouldAcceptBoundaryCoordinates(String lat, String lng) throws Exception {
-            when(storeService.findClosestStores(anyDouble(), anyDouble(), eq(TravelMode.DRIVING)))
+            when(storeService.findClosestStores(anyDouble(), anyDouble(), eq(TravelMode.DRIVING), any()))
                     .thenReturn(singleStoreResult());
 
             mockMvc.perform(get(ENDPOINT)
