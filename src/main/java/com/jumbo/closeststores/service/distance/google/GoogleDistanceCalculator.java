@@ -58,9 +58,9 @@ public class GoogleDistanceCalculator implements DistanceCalculator {
             }
         }
 
-        String strategy = usedFallback
-                ? DistanceStrategy.HAVERSINE.getValue()
-                : DistanceStrategy.GOOGLE.getValue();
+        DistanceStrategy strategy = usedFallback
+                ? DistanceStrategy.HAVERSINE
+                : DistanceStrategy.GOOGLE;
 
         log.debug("Google calculation completed in {} ms, {} batches, strategy={}",
                 System.currentTimeMillis() - start, batches.size(), strategy);
@@ -69,8 +69,8 @@ public class GoogleDistanceCalculator implements DistanceCalculator {
     }
 
     @Override
-    public String getStrategyName() {
-        return DistanceStrategy.GOOGLE.getValue();
+    public DistanceStrategy getStrategy() {
+        return DistanceStrategy.GOOGLE;
     }
 
     /**

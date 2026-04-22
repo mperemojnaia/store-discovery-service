@@ -18,27 +18,27 @@ public class DistanceCalculatorConfig {
 
     private final GoogleMapsProperties googleMapsProperties;
     private final OrsProperties orsProperties;
+    private final String distanceStrategy;
 
-    @Value("${distance.strategy:haversine}")
-    private String distanceStrategy;
-
-    public DistanceCalculatorConfig(GoogleMapsProperties googleMapsProperties, OrsProperties orsProperties) {
+    public DistanceCalculatorConfig(GoogleMapsProperties googleMapsProperties,
+                                    OrsProperties orsProperties,
+                                    @Value("${distance.strategy:haversine}") String distanceStrategy) {
         this.googleMapsProperties = googleMapsProperties;
         this.orsProperties = orsProperties;
+        this.distanceStrategy = distanceStrategy;
     }
 
     @PostConstruct
     public void validateApiKeys() {
-        log.info("Distance strategy configured: {}", distanceStrategy);
+        DistanceStrategy strategy = parseStrategy(distanceStrategy);
+        log.info("Distance strategy configured: {}", strategy);
 
-        if (DistanceStrategy.GOOGLE.getValue().equalsIgnoreCase(distanceStrategy)
-                && (googleMapsProperties.apiKey() == null || googleMapsProperties.apiKey().isBlank())) {
+        if (strategy == DistanceStrategy.GOOGLE && isBlank(googleMapsProperties.apiKey())) {
             throw new IllegalStateException(
                     "Google Distance Matrix API key is required when distance.strategy=google. "
                             + "Set the GOOGLE_MAPS_API_KEY environment variable or google.maps.api-key property.");
         }
-        if (DistanceStrategy.ORS.getValue().equalsIgnoreCase(distanceStrategy)
-                && (orsProperties.apiKey() == null || orsProperties.apiKey().isBlank())) {
+        if (strategy == DistanceStrategy.ORS && isBlank(orsProperties.apiKey())) {
             throw new IllegalStateException(
                     "OpenRouteService API key is required when distance.strategy=ors. "
                             + "Set the ORS_API_KEY environment variable or ors.api-key property.");
@@ -48,5 +48,19 @@ public class DistanceCalculatorConfig {
     @Bean
     public HaversineDistanceCalculator haversineDistanceCalculator() {
         return new HaversineDistanceCalculator();
+    }
+
+    private static DistanceStrategy parseStrategy(String value) {
+        for (DistanceStrategy s : DistanceStrategy.values()) {
+            if (s.getValue().equalsIgnoreCase(value)) {
+                return s;
+            }
+        }
+        throw new IllegalStateException("Unknown distance.strategy: '" + value
+                + "'. Allowed: haversine, google, ors");
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

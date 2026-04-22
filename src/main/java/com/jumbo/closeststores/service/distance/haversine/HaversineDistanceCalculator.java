@@ -32,11 +32,11 @@ public class HaversineDistanceCalculator implements DistanceCalculator {
         for (Position destination : destinations) {
             distances.add(calculate(origin, destination));
         }
-        return new DistanceResult(distances, getStrategyName());
+        return new DistanceResult(distances, getStrategy());
     }
 
     @Override
-    public String getStrategyName() {
-        return DistanceStrategy.HAVERSINE.getValue();
+    public DistanceStrategy getStrategy() {
+        return DistanceStrategy.HAVERSINE;
     }
 }

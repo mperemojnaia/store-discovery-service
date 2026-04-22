@@ -35,7 +35,7 @@ public interface StoreResponseMapper {
         StoreResponse response = new StoreResponse();
         response.setStores(toStoreItems(result.stores()));
         response.setDistanceType(
-                StoreResponse.DistanceTypeEnum.fromValue(result.distanceType()));
+                StoreResponse.DistanceTypeEnum.fromValue(result.distanceStrategy().getValue()));
         return response;
     }
 

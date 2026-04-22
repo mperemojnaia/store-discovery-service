@@ -3,6 +3,7 @@ distance:
 
 store:
   data-file: ${STORE_DATA_FILE:stores.json}
+  max-results: ${STORE_MAX_RESULTS:5}
   geohash:
     precision: ${STORE_GEOHASH_PRECISION:4}
     min-candidates: ${STORE_GEOHASH_MIN_CANDIDATES:20}
@@ -19,6 +20,7 @@ ors:
   base-url: https://api.openrouteservice.org/v2/directions
   timeout: 5000
   max-locations-per-request: 50
+  candidate-pool-size: ${ORS_CANDIDATE_POOL_SIZE:15}
 
 server:
   port: ${SERVER_PORT:8080}

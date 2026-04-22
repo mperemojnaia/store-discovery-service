@@ -15,7 +15,9 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +46,10 @@ public class OrsDistanceApiClient {
 
         Map<String, Object> body = Map.of("coordinates", coordinates);
 
-        String url = properties.baseUrl() + "/" + profile;
+        URI uri = UriComponentsBuilder.fromUriString(properties.baseUrl())
+                .pathSegment(profile)
+                .build()
+                .toUri();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -52,7 +57,7 @@ public class OrsDistanceApiClient {
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-        OrsDirectionsResponse response = restTemplate.postForObject(url, request, OrsDirectionsResponse.class);
+        OrsDirectionsResponse response = restTemplate.postForObject(uri, request, OrsDirectionsResponse.class);
 
         if (response == null || response.routes() == null || response.routes().isEmpty()) {
             log.warn("ORS returned empty/null response for profile '{}': origin=({},{}), dest=({},{})",

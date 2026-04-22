@@ -9,6 +9,7 @@ import com.jumbo.closeststores.service.distance.haversine.HaversineDistanceCalcu
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -38,17 +39,17 @@ public class OrsDistanceCalculator implements DistanceCalculator {
     );
     private static final String DEFAULT_PROFILE = PROFILE_DRIVING_CAR;
 
-    // Pre-filter: use Haversine to find top N candidates, then refine with ORS
-    private static final int CANDIDATE_POOL_SIZE = 15;
-
     private final OrsDistanceApiClient apiClient;
     private final HaversineDistanceCalculator fallback;
+    private final int candidatePoolSize;
 
     public OrsDistanceCalculator(
             OrsDistanceApiClient apiClient,
-            HaversineDistanceCalculator fallback) {
+            HaversineDistanceCalculator fallback,
+            @Value("${ors.candidate-pool-size:15}") int candidatePoolSize) {
         this.apiClient = apiClient;
         this.fallback = fallback;
+        this.candidatePoolSize = candidatePoolSize;
     }
 
     @Override
@@ -61,7 +62,7 @@ public class OrsDistanceCalculator implements DistanceCalculator {
         List<Double> haversineDistances = haversineResult.distances();
 
         // Step 2: Find indices of the closest N candidates by Haversine
-        List<Integer> candidateIndices = findTopCandidateIndices(haversineDistances, CANDIDATE_POOL_SIZE);
+        List<Integer> candidateIndices = findTopCandidateIndices(haversineDistances, candidatePoolSize);
         log.debug("ORS refining {} candidates with profile '{}' from ({},{})",
                 candidateIndices.size(), profile, origin.latitude(), origin.longitude());
 
@@ -102,9 +103,9 @@ public class OrsDistanceCalculator implements DistanceCalculator {
                     failedCount, candidateIndices.size());
         }
 
-        String strategy = usedOrs
-                ? DistanceStrategy.ORS.getValue()
-                : DistanceStrategy.HAVERSINE.getValue();
+        DistanceStrategy strategy = usedOrs
+                ? DistanceStrategy.ORS
+                : DistanceStrategy.HAVERSINE;
 
         log.debug("ORS calculation completed in {} ms, strategy={}", System.currentTimeMillis() - start, strategy);
 
@@ -112,8 +113,8 @@ public class OrsDistanceCalculator implements DistanceCalculator {
     }
 
     @Override
-    public String getStrategyName() {
-        return DistanceStrategy.ORS.getValue();
+    public DistanceStrategy getStrategy() {
+        return DistanceStrategy.ORS;
     }
 
     private String resolveProfile(TravelMode travelMode) {

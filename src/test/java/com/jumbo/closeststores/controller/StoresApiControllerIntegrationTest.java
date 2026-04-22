@@ -1,6 +1,7 @@
 package com.jumbo.closeststores.controller;
 
 import com.jumbo.closeststores.controller.mapper.StoreResponseMapperImpl;
+import com.jumbo.closeststores.model.DistanceStrategy;
 import com.jumbo.closeststores.model.StoreLocatorResult;
 import com.jumbo.closeststores.model.Store;
 import com.jumbo.closeststores.model.StoreWithDistance;
@@ -63,7 +64,7 @@ class StoresApiControllerIntegrationTest {
     private static StoreLocatorResult singleStoreResult() {
         return new StoreLocatorResult(
                 List.of(new StoreWithDistance(sampleStore(), 1.23)),
-                "haversine"
+                DistanceStrategy.HAVERSINE
         );
     }
 
