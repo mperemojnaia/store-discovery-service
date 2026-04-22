@@ -1,0 +1,11 @@
+.git
+target
+*.md
+.kiro
+.vscode
+.idea
+*.iml
+.dockerignore
+Dockerfile
+API_TESTING.md
+.env

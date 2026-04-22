@@ -1,0 +1,70 @@
+distance:
+  strategy: ${DISTANCE_STRATEGY:haversine}
+
+store:
+  data-file: ${STORE_DATA_FILE:stores.json}
+  geohash:
+    precision: ${STORE_GEOHASH_PRECISION:4}
+    min-candidates: ${STORE_GEOHASH_MIN_CANDIDATES:20}
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    base-url: https://maps.googleapis.com/maps/api/distancematrix/json
+    timeout: 5000
+    max-destinations-per-request: 25
+
+ors:
+  api-key: ${ORS_API_KEY:}
+  base-url: https://api.openrouteservice.org/v2/directions
+  timeout: 5000
+  max-locations-per-request: 50
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+resilience4j:
+  retry:
+    instances:
+      googleDistanceApi:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+      orsDistanceApi:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+  circuitbreaker:
+    instances:
+      googleDistanceApi:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        record-exceptions:
+          - org.springframework.web.client.RestClientException
+      orsDistanceApi:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        record-exceptions:
+          - org.springframework.web.client.RestClientException
