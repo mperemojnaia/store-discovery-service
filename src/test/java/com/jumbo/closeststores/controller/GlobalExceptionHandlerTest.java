@@ -1,6 +1,7 @@
 package com.jumbo.closeststores.controller;
 
 import com.jumbo.closeststores.api.model.ErrorResponse;
+import com.jumbo.closeststores.controller.exception.InvalidRequestException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
@@ -74,13 +75,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void shouldReturn400WithExactMessage_whenIllegalArgumentThrown() {
+    void shouldReturn400WithExactMessage_whenInvalidRequestThrown() {
         ResponseEntity<ErrorResponse> response =
-                handler.handleIllegalArgument(new IllegalArgumentException("Latitude must be between -90 and 90"));
+                handler.handleInvalidRequest(new InvalidRequestException("Invalid travel mode: 'flying'"));
 
         assertAll(
                 () -> assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode()),
-                () -> assertEquals("Latitude must be between -90 and 90", response.getBody().getMessage())
+                () -> assertEquals("Invalid travel mode: 'flying'", response.getBody().getMessage())
         );
     }
 
@@ -99,7 +100,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldIncludeValidIso8601Timestamp_inAllErrorResponses() {
         ResponseEntity<ErrorResponse> response =
-                handler.handleIllegalArgument(new IllegalArgumentException("test"));
+                handler.handleInvalidRequest(new InvalidRequestException("test"));
 
         assertDoesNotThrow(() -> Instant.parse(response.getBody().getTimestamp()));
     }
