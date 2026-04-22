@@ -232,7 +232,7 @@ class OrsDistanceCalculatorTest {
     }
 
     @Test
-    void shouldReturnOrsStrategyName() {
+    void shouldReturnOrsStrategy() {
         assertEquals(DistanceStrategy.ORS, calculator.getStrategy());
     }
 

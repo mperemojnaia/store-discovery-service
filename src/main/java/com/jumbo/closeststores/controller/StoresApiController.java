@@ -23,10 +23,10 @@ public class StoresApiController implements StoresApi {
 
     @Override
     public ResponseEntity<StoreResponse> getClosestStores(
-            Double latitude, Double longitude, String travelMode) {
+            Double latitude, Double longitude, String travelMode, Integer limit) {
 
-        log.debug("Received closest stores request: lat={}, lng={}, travelMode={}",
-                latitude, longitude, travelMode);
+        log.debug("Received closest stores request: lat={}, lng={}, travelMode={}, limit={}",
+                latitude, longitude, travelMode, limit);
 
         TravelMode mode = travelMode != null
                 ? TravelMode.fromValue(travelMode)
@@ -35,7 +35,7 @@ public class StoresApiController implements StoresApi {
         long start = System.currentTimeMillis();
 
         StoreLocatorResult result =
-                storeService.findClosestStores(latitude, longitude, mode);
+                storeService.findClosestStores(latitude, longitude, mode, limit);
 
         StoreResponse response = storeResponseMapper.toStoreResponse(result);
 

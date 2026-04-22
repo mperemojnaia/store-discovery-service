@@ -36,7 +36,7 @@ class StoreServiceTest {
     }
 
     @Test
-    void shouldReturnAtMost5Stores_whenMoreThan5AreAvailable() {
+    void shouldReturnAtMost5Stores_whenDefaultLimit() {
         List<Store> stores = IntStream.rangeClosed(1, 10)
                 .mapToObj(i -> storeAt("Store" + i, 52.0 + i * 0.01, 4.0))
                 .toList();
@@ -48,13 +48,31 @@ class StoreServiceTest {
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
                 .thenReturn(new DistanceResult(distances, DistanceStrategy.HAVERSINE));
 
-        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null, null);
 
         assertEquals(5, result.stores().size());
     }
 
     @Test
-    void shouldReturnAllStores_whenFewerThan5AreAvailable() {
+    void shouldRespectCustomLimit() {
+        List<Store> stores = IntStream.rangeClosed(1, 10)
+                .mapToObj(i -> storeAt("Store" + i, 52.0 + i * 0.01, 4.0))
+                .toList();
+        List<Double> distances = IntStream.rangeClosed(1, 10)
+                .mapToObj(i -> (double) i)
+                .toList();
+
+        when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(stores);
+        when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
+                .thenReturn(new DistanceResult(distances, DistanceStrategy.HAVERSINE));
+
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null, 3);
+
+        assertEquals(3, result.stores().size());
+    }
+
+    @Test
+    void shouldReturnAllStores_whenFewerThanLimit() {
         List<Store> stores = List.of(
                 storeAt("A", 52.1, 4.1),
                 storeAt("B", 52.2, 4.2)
@@ -64,7 +82,7 @@ class StoreServiceTest {
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
                 .thenReturn(new DistanceResult(List.of(5.0, 3.0), DistanceStrategy.HAVERSINE));
 
-        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null, null);
 
         assertEquals(2, result.stores().size());
     }
@@ -81,7 +99,7 @@ class StoreServiceTest {
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
                 .thenReturn(new DistanceResult(List.of(100.0, 1.0, 50.0), DistanceStrategy.HAVERSINE));
 
-        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null, null);
 
         assertAll(
                 () -> assertEquals("Close", result.stores().get(0).store().addressName()),
@@ -98,7 +116,7 @@ class StoreServiceTest {
         when(distanceCalculator.calculateDistances(any(), anyList(), (TravelMode) isNull()))
                 .thenReturn(new DistanceResult(List.of(12.3456789), DistanceStrategy.HAVERSINE));
 
-        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null, null);
 
         assertEquals(12.35, result.stores().get(0).distanceKm());
     }
@@ -111,7 +129,7 @@ class StoreServiceTest {
         when(distanceCalculator.calculateDistances(any(), anyList(), eq(TravelMode.WALKING)))
                 .thenReturn(new DistanceResult(List.of(5.0), DistanceStrategy.GOOGLE));
 
-        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, TravelMode.WALKING);
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, TravelMode.WALKING, null);
 
         assertEquals(DistanceStrategy.GOOGLE, result.distanceStrategy());
     }
@@ -121,7 +139,7 @@ class StoreServiceTest {
         when(storeRepository.findNearbyStores(eq(52.0), eq(4.0))).thenReturn(List.of());
         when(distanceCalculator.getStrategy()).thenReturn(DistanceStrategy.HAVERSINE);
 
-        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null);
+        StoreLocatorResult result = storeService.findClosestStores(52.0, 4.0, null, null);
 
         assertAll(
                 () -> assertTrue(result.stores().isEmpty()),
@@ -132,6 +150,6 @@ class StoreServiceTest {
     @Test
     void shouldThrowException_whenCoordinatesAreInvalid() {
         assertThrows(IllegalArgumentException.class,
-                () -> storeService.findClosestStores(91.0, 4.0, null));
+                () -> storeService.findClosestStores(91.0, 4.0, null, null));
     }
 }

@@ -8,13 +8,12 @@ import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -28,12 +27,12 @@ public class OrsDistanceApiClient {
     private static final Logger log = LoggerFactory.getLogger(OrsDistanceApiClient.class);
     private static final double METERS_PER_KM = 1000.0;
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final OrsProperties properties;
 
     public OrsDistanceApiClient(OrsProperties properties) {
         this.properties = properties;
-        this.restTemplate = buildRestTemplate(properties.timeout());
+        this.restClient = buildRestClient(properties);
     }
 
     @Retry(name = "orsDistanceApi")
@@ -44,20 +43,17 @@ public class OrsDistanceApiClient {
                 new double[]{destination.longitude(), destination.latitude()}
         );
 
-        Map<String, Object> body = Map.of("coordinates", coordinates);
-
         URI uri = UriComponentsBuilder.fromUriString(properties.baseUrl())
                 .pathSegment(profile)
                 .build()
                 .toUri();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", properties.apiKey());
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-        OrsDirectionsResponse response = restTemplate.postForObject(uri, request, OrsDirectionsResponse.class);
+        OrsDirectionsResponse response = restClient.post()
+                .uri(uri)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("coordinates", coordinates))
+                .retrieve()
+                .body(OrsDirectionsResponse.class);
 
         if (response == null || response.routes() == null || response.routes().isEmpty()) {
             log.warn("ORS returned empty/null response for profile '{}': origin=({},{}), dest=({},{})",
@@ -80,10 +76,13 @@ public class OrsDistanceApiClient {
         return distanceKm;
     }
 
-    private static RestTemplate buildRestTemplate(int timeoutMs) {
+    private static RestClient buildRestClient(OrsProperties properties) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(timeoutMs);
-        factory.setReadTimeout(timeoutMs);
-        return new RestTemplate(factory);
+        factory.setConnectTimeout(properties.timeout());
+        factory.setReadTimeout(properties.timeout());
+        return RestClient.builder()
+                .requestFactory(factory)
+                .defaultHeader("Authorization", properties.apiKey())
+                .build();
     }
 }
