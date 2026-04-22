@@ -1,5 +1,6 @@
 package com.jumbo.closeststores.repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jumbo.closeststores.model.Position;
@@ -51,6 +52,7 @@ public class StoreDataLoader {
             JsonNode storesNode = root.get("stores");
 
             if (storesNode == null || !storesNode.isArray()) {
+                log.error("{} does not contain a valid 'stores' array", dataFile);
                 throw new IllegalStateException(dataFile + " does not contain a 'stores' array");
             }
 
@@ -59,7 +61,6 @@ public class StoreDataLoader {
             log.info("Loaded {} valid stores from {}", validStores.size(), dataFile);
 
         } catch (IOException e) {
-            log.error("Failed to read {}", dataFile, e);
             throw new IllegalStateException("Failed to read " + dataFile, e);
         }
     }
@@ -76,7 +77,7 @@ public class StoreDataLoader {
                 } else {
                     skipped++;
                 }
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 skipped++;
                 String name = node.has("addressName") ? node.get("addressName").asText() : "unknown";
                 log.debug("Failed to parse store '{}': {}", name, e.getMessage());
